@@ -1,6 +1,6 @@
 # IR24W-A3-G1
 -------------------------
-Assignment 3: Search Engine
+Assignment 3: Implementing a Search Engine
 
 TEAM MEMBERS
 -------------------------
