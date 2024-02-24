@@ -36,6 +36,7 @@ def valid(url, content):
     return True
 
 def writeReport():
+    """class that writes data to a file"""
 
     with open("report.txt", "r") as report:
         lines = report.readlines()
@@ -93,9 +94,9 @@ def readZip(path:str):
                         #gets each word and frequency in each file
                         for word, count in counter.items():
                             ps = PorterStemmer()
-                            stemmedTokens = list(map(lambda token: ps.stem(token), word))
-                            stats.uniqueTokens.add(stemmedTokens)
-                            stats.indexDict[word].append((json_data['url'], count))
+                            stemmedWord = ps.stem(word)
+                            stats.uniqueTokens.add(stemmedWord)
+                            stats.indexDict[stemmedWord].append((json_data['url'], count))
 
 
         writeReport()
