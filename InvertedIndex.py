@@ -37,6 +37,10 @@ def valid(url, content):
 
 def writeReport():
     """class that writes data to a file"""
+    with open('report.txt', 'w') as file:
+        file.write("Number of documents: 0\n")
+        file.write("Number of [unique] tokens: 0\n")
+        file.write("Total size (in KB): 0\n")
 
     with open("report.txt", "r") as report:
         lines = report.readlines()
@@ -74,42 +78,26 @@ def readZip(path:str):
         # Iterate through each file in the zip archive
         # print(file_list)
         for file_name in file_list:
-            count+=1
-            if count % 10000 == 0:
-                writeReport()
-            else:
-                # Check if the file is a JSON file (you can customize this condition)
-                if file_name.endswith('.json'):
-                    # Read the JSON content directly from the zip archive
-                    with zip_ref.open(file_name) as json_file:
-                        # Load JSON content
-                        json_data = json.load(json_file)
-                        if not valid(json_data['url'], json_data['content']):
-                            pass
-                        stats.numDocs += 1
-                        soup = BeautifulSoup(json_data['content'], "html.parser")
-                        alphanumeric_words = re.findall(r'\b\w+\b', soup.get_text())
-                        alpha = [word.lower() for word in alphanumeric_words]
-                        counter = Counter(alpha)
-                        #gets each word and frequency in each file
-                        for word, count in counter.items():
-                            ps = PorterStemmer()
-                            stemmedWord = ps.stem(word)
-                            stats.uniqueTokens.add(stemmedWord)
-                            stats.indexDict[stemmedWord].append((json_data['url'], count))
-
-
+            # Check if the file is a JSON file (you can customize this condition)
+            if file_name.endswith('.json'):
+                # Read the JSON content directly from the zip archive
+                with zip_ref.open(file_name) as json_file:
+                    # Load JSON content
+                    json_data = json.load(json_file)
+                    if not valid(json_data['url'], json_data['content']):
+                        pass
+                    stats.numDocs += 1
+                    soup = BeautifulSoup(json_data['content'], "html.parser")
+                    alphanumeric_words = re.findall(r'\b\w+\b', soup.get_text())
+                    alpha = [word.lower() for word in alphanumeric_words]
+                    counter = Counter(alpha)
+                    #gets each word and frequency in each file
+                    for word, count in counter.items():
+                        ps = PorterStemmer()
+                        stemmedWord = ps.stem(word)
+                        stats.uniqueTokens.add(stemmedWord)
+                        stats.indexDict[stemmedWord].append((json_data['url'], count))
         writeReport()
-
-
-def write_partial_index_to_disk(partial_index):
-    # Step 4 continued: Serialize and write to a temporary file on disk
-    with open('partial_index_temp.json', 'w') as file:
-        json.dump(partial_index, file)
-
-    # You can also choose to use binary serialization for efficiency
-    # with open('partial_index_temp.bin', 'wb') as file:
-    #     pickle.dump(partial_index, file)
 
 
 
