@@ -37,26 +37,12 @@ def valid(url, content):
 
 def writeReport():
     """class that writes data to a file"""
-
-    with open("report.txt", "r") as report:
-        lines = report.readlines()
-
-    # read from each line and update any values
-    for i, line in enumerate(lines):
-
-        if "Number of documents:" in line:
-            lines[i] = f"Number of documents: {stats.numDocs}\n"
-        elif "Number of [unique] tokens:" in line:
-            lines[i] = f"Number of [unique] tokens: {len(stats.uniqueTokens)}\n"
-        elif "Total size (in KB):" in line:
-            lines[i] = f"Total size (in KB): {stats.totalSize}\n"
-        # elif "Table:" in line:
-        #     sorted_index = dict(sorted(stats.indexDict.items()))
-        #     for key, val in sorted_index.items():
-        #         lines[i] += f"{key}: {val}\n"
-
     with open("report.txt", "w") as report:
-        report.writelines(lines)
+        report.write(f"Number of documents: {stats.numDocs}\n")
+        report.write(f"Number of [unique] tokens: {len(stats.uniqueTokens)}\n")
+        report.write(f"Total size (in KB): {stats.totalSize}\n")
+
+
 
 def readZip(path:str):
     """
@@ -75,31 +61,30 @@ def readZip(path:str):
         # print(file_list)
         for file_name in file_list:
             count+=1
-            if count % 10000 == 0:
-                writeReport()
-            else:
-                # Check if the file is a JSON file (you can customize this condition)
-                if file_name.endswith('.json'):
-                    # Read the JSON content directly from the zip archive
-                    with zip_ref.open(file_name) as json_file:
-                        # Load JSON content
-                        json_data = json.load(json_file)
-                        if not valid(json_data['url'], json_data['content']):
-                            pass
-                        stats.numDocs += 1
-                        soup = BeautifulSoup(json_data['content'], "html.parser")
-                        alphanumeric_words = re.findall(r'\b\w+\b', soup.get_text())
-                        alpha = [word.lower() for word in alphanumeric_words]
-                        counter = Counter(alpha)
-                        #gets each word and frequency in each file
-                        for word, count in counter.items():
-                            ps = PorterStemmer()
-                            stemmedWord = ps.stem(word)
-                            stats.uniqueTokens.add(stemmedWord)
-                            stats.indexDict[stemmedWord].append((json_data['url'], count))
+
+            # Check if the file is a JSON file (you can customize this condition)
+            if file_name.endswith('.json'):
+                # Read the JSON content directly from the zip archive
+                with zip_ref.open(file_name) as json_file:
+                    # Load JSON content
+                    json_data = json.load(json_file)
+                    if not valid(json_data['url'], json_data['content']):
+                        pass
+                    stats.numDocs += 1
+                    soup = BeautifulSoup(json_data['content'], "html.parser")
+                    alphanumeric_words = re.findall(r'\b\w+\b', soup.get_text())
+                    alpha = [word.lower() for word in alphanumeric_words]
+                    counter = Counter(alpha)
+                    #gets each word and frequency in each file
+                    for word, count in counter.items():
+                        ps = PorterStemmer()
+                        stemmedWord = ps.stem(word)
+                        stats.uniqueTokens.add(stemmedWord)
+                        stats.indexDict[stemmedWord].append((json_data['url'], count))
 
 
-        writeReport()
+
+
 
 
 def write_partial_index_to_disk(partial_index):
@@ -116,5 +101,6 @@ def write_partial_index_to_disk(partial_index):
 if __name__ == "__main__":
 
     stats = indexStats()
-    zip_file_path = 'developer.zip'
+    zip_file_path = "C:\\Users\\Antonio\\Downloads\\developer.zip"
     readZip(zip_file_path)
+    writeReport()

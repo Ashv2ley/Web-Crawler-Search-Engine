@@ -1,0 +1,3 @@
+Number of documents: 10
+Number of [unique] tokens: 614
+Total size (in KB): 0
