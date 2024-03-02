@@ -1,15 +1,14 @@
 import zipfile
 import json
-from urllib.parse import urlparse
+import re
 
+from urllib.parse import urlparse
 from nltk.stem import PorterStemmer
 from bs4 import BeautifulSoup
 from dataclasses import dataclass,field
-from collections import Counter
-import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 from typing import DefaultDict, List, Set
-
+from flask import Flask, render_template, request
 
 @dataclass
 class indexStats():
@@ -21,6 +20,26 @@ class indexStats():
     totalSize: int = 0
     indexDict: DefaultDict[str, List] = field(default_factory = lambda: defaultdict(list))
     uniqueTokens: Set[str] = field(default_factory = set)
+    searchQuery: str = ""
+
+
+
+app = Flask(__name__, static_url_path='/static')
+stats = indexStats()
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+@app.route("/search", methods=['GET'])
+def search():
+    query = request.args.get('query')
+    global stats
+    stats.searchQuery = query
+    return render_template("index.html", query = query)
+
+
+
+
 
 def valid(url, content):
     parsed = urlparse(url)
@@ -34,6 +53,10 @@ def valid(url, content):
     if "html" not in soup.contents[0]:
         return False
     return True
+
+
+
+
 
 def writeReport():
     """class that writes data to a file"""
@@ -54,13 +77,11 @@ def writeReport():
             lines[i] = f"Number of [unique] tokens: {len(stats.uniqueTokens)}\n"
         elif "Total size (in KB):" in line:
             lines[i] = f"Total size (in KB): {stats.totalSize}\n"
-        # elif "Table:" in line:
-        #     sorted_index = dict(sorted(stats.indexDict.items()))
-        #     for key, val in sorted_index.items():
-        #         lines[i] += f"{key}: {val}\n"
+
 
     with open("report.txt", "w") as report:
         report.writelines(lines)
+
 
 def readZip(path:str):
     """
@@ -90,6 +111,7 @@ def readZip(path:str):
                     soup = BeautifulSoup(json_data['content'], "html.parser")
                     alphanumeric_words = re.findall(r'\b\w+\b', soup.get_text())
                     alpha = [word.lower() for word in alphanumeric_words]
+                    print(alpha)
                     counter = Counter(alpha)
                     #gets each word and frequency in each file
                     for word, count in counter.items():
@@ -97,12 +119,12 @@ def readZip(path:str):
                         stemmedWord = ps.stem(word)
                         stats.uniqueTokens.add(stemmedWord)
                         stats.indexDict[stemmedWord].append((json_data['url'], count))
-        writeReport()
+
 
 
 
 if __name__ == "__main__":
-
-    stats = indexStats()
+    app.run(debug = True, port = 8000)
     zip_file_path = 'developer.zip'
     readZip(zip_file_path)
+
