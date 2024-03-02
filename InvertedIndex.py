@@ -1,6 +1,8 @@
 import zipfile
 import json
 import re
+import shelve
+import pickle
 
 from urllib.parse import urlparse
 from nltk.stem import PorterStemmer
@@ -18,14 +20,22 @@ class indexStats():
     numDocs: int = 0
     uniquePages: int = 0
     totalSize: int = 0
+    tf_idf: int = 0
+    ps: PorterStemmer = PorterStemmer()
     indexDict: DefaultDict[str, List] = field(default_factory = lambda: defaultdict(list))
     uniqueTokens: Set[str] = field(default_factory = set)
-    searchQuery: str = ""
-
+    searchTokens: List[str] = field(default_factory = list)
 
 
 app = Flask(__name__, static_url_path='/static')
 stats = indexStats()
+# with shelve.open("shelf") as shelf:
+#     shelf["index"] = stats.indexDict
+
+# shelf = shelve.open("shelf")
+
+
+
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -34,7 +44,15 @@ def home():
 def search():
     query = request.args.get('query')
     global stats
-    stats.searchQuery = query
+    if bool(
+            re.search(r'\band\b', query.lower(), flags=re.IGNORECASE)):
+        tokens = query.split("and")
+        stats.searchTokens = [stats.ps.stem(token) for token in tokens]
+    else:
+        tokens = query.split(" ")
+        stats.searchTokens = [stats.ps.stem(token) for token in tokens]
+
+    searchIndex()
     return render_template("index.html", query = query)
 
 
@@ -53,8 +71,6 @@ def valid(url, content):
     if "html" not in soup.contents[0]:
         return False
     return True
-
-
 
 
 
@@ -91,7 +107,6 @@ def readZip(path:str):
     :return: None
     """
 
-    count = 0
     # Open the zip file
     with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
         # List all files in the zip archive
@@ -110,21 +125,46 @@ def readZip(path:str):
                     stats.numDocs += 1
                     soup = BeautifulSoup(json_data['content'], "html.parser")
                     alphanumeric_words = re.findall(r'\b\w+\b', soup.get_text())
-                    alpha = [word.lower() for word in alphanumeric_words]
-                    print(alpha)
-                    counter = Counter(alpha)
+                    corpus = [stats.ps.stem(word.lower()) for word in alphanumeric_words] #all words in a file
+                    num_of_words_in_file = len(corpus)
+                    counter = Counter(corpus)
                     #gets each word and frequency in each file
                     for word, count in counter.items():
-                        ps = PorterStemmer()
-                        stemmedWord = ps.stem(word)
-                        stats.uniqueTokens.add(stemmedWord)
-                        stats.indexDict[stemmedWord].append((json_data['url'], count))
+
+                        stats.indexDict[word].append((json_data['url'], count))
+
+    #             with shelve.open("shelf") as shelf:
+    #                 shelf["index"] = stats.indexDict
+    # # print(stats.indexDict)
+    # #make a shelve and store the inverted index then refer to the shelve when getting the tf_idf score
+
+def save_to_shelve(index):
+    with shelve.open("index_shelf") as shelf:
+        # Store the dictionary in the shelve
+        shelf['index'] = pickle.dumps(index)
+
+# def print_shelve():
+#     with shelve.open("index_shelf") as shelf:
+#         # Retrieve and print the stored dictionary
+#         stored_data = shelf.get('index', {})
+#         # print("Contents of the shelve:")
+#         print(stored_data)
+
+def searchIndex():
+    with shelve.open("index_shelf") as shelf:
+        # Retrieve and print the stored dictionary
+        stored_data = shelf.get('index', {})
+        unpickled_data = pickle.loads(stored_data)
+        for token in stats.searchTokens:
+            result = unpickled_data.get(token)
+            print(result)
 
 
+        # print(stored_data)
 
 
 if __name__ == "__main__":
-    app.run(debug = True, port = 8000)
     zip_file_path = 'developer.zip'
     readZip(zip_file_path)
-
+    save_to_shelve(stats.indexDict)
+    app.run(debug = True, port = 8000)
