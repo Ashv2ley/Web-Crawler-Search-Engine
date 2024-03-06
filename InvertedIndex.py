@@ -43,6 +43,7 @@ def home():
 @app.route("/search", methods=['GET'])
 def search():
     query = request.args.get('query')
+    print(query)
     global stats
     if bool(
             re.search(r'\band\b', query.lower(), flags=re.IGNORECASE)):
