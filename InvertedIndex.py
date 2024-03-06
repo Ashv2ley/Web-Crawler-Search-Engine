@@ -11,6 +11,7 @@ from dataclasses import dataclass,field
 from collections import Counter, defaultdict
 from typing import DefaultDict, List, Set
 from flask import Flask, render_template, request
+import os.path
 
 @dataclass
 class indexStats():
@@ -18,6 +19,7 @@ class indexStats():
     Class that keeps track of all the stats of the index
     """
     numDocs: int = 0
+    length: int=0
     uniquePages: int = 0
     totalSize: int = 0
     tf_idf: int = 0
@@ -108,7 +110,7 @@ def readZip(path:str):
     """
 
     # Open the zip file
-    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+    with zipfile.ZipFile(path, 'r') as zip_ref:
         # List all files in the zip archive
         file_list = zip_ref.namelist()
         # Iterate through each file in the zip archive
@@ -133,10 +135,34 @@ def readZip(path:str):
 
                         stats.indexDict[word].append((json_data['url'], count))
 
+
     #             with shelve.open("shelf") as shelf:
     #                 shelf["index"] = stats.indexDict
     # # print(stats.indexDict)
     # #make a shelve and store the inverted index then refer to the shelve when getting the tf_idf score
+
+def merge(num:int):
+    """
+    merges partial indexes
+    :param num:
+    :return:
+    """
+    for i in range(num):
+        with open(f"index_{i+1}.pkl", "rb") as file:
+            indexData = pickle.load(file)
+            stats.indexDict.update(indexData)
+
+
+def create_partial_index(index):
+    num_partitions = 3
+    partSize = len(stats.indexDict) // num_partitions
+    for i in range(num_partitions):
+        start = i * partSize
+        end = (i+1) * partSize
+
+        splitData = {k: stats.indexDict[k] for k in list(stats.indexDict)[start:end]}
+        with open(f'index_{i + 1}.pkl', 'wb') as file:
+            pickle.dump(splitData, file)
 
 def save_to_shelve(index):
     with shelve.open("index_shelf") as shelf:
@@ -164,7 +190,17 @@ def searchIndex():
 
 
 if __name__ == "__main__":
-    zip_file_path = 'developer.zip'
-    readZip(zip_file_path)
-    save_to_shelve(stats.indexDict)
-    app.run(debug = True, port = 8000)
+    stats = indexStats()
+    if not stats.indexDict:
+        merge(3)
+
+    print("Done indexing!")
+    print(len(stats.indexDict))
+    print(stats.indexDict["hello"])
+
+
+
+    # zip_file_path = "C:\\Users\\Antonio\\Downloads\\developer.zip"
+    # readZip(zip_file_path)
+    # create_partial_index(stats.indexDict)
+    # app.run(debug = True, port = 8000)
