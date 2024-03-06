@@ -17,7 +17,14 @@
             <button type="submit" class="search-button">Search</button>
         </form>
 
-        <div>{{query}}</div>
+         <div class="urls">
+             <h2>{{ search }}</h2>
+            <ul>
+                {% for url in urls %}
+                    <li><a href="{{ urls }}" target="_blank">{{ url[0] }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 
 </body>
