@@ -46,7 +46,7 @@ def home():
 def search():
     query = request.args.get('query')
     print(query)
-    global stats
+    # global stats
     if bool(
             re.search(r'\band\b', query.lower(), flags=re.IGNORECASE)):
         tokens = query.split("and")
@@ -143,7 +143,7 @@ def merge(num:int):
     :return:
     """
     for i in range(num):
-        with open(f"index_{i+1}.pkl", "rb") as file:
+        with open(f"partial indexes/index_{i+1}.pkl", "rb") as file:
             indexData = pickle.load(file)
             stats.indexDict.update(indexData)
 
@@ -191,6 +191,11 @@ def searchIndex():
 
 
 if __name__ == "__main__":
+    stats = indexStats()
+    if not stats.indexDict:
+        print("Indexing...")
+        merge(3)
+        print("Index Complete!")
     zip_file_path = 'developer.zip'
     # readZip(zip_file_path)
     # save_to_shelve(stats.indexDict)
