@@ -22,6 +22,7 @@ class indexStats():
     length: int=0
     uniquePages: int = 0
     totalSize: int = 0
+    hits: int = 0
     tf: int = 0
     ifd: int = 0
     tf_idf: int = 0
@@ -45,7 +46,7 @@ def home():
 @app.route("/search", methods=['GET'])
 def search():
     query = request.args.get('query')
-    print(query)
+
     # global stats
     if bool(
             re.search(r'\band\b', query.lower(), flags=re.IGNORECASE)):
@@ -56,7 +57,7 @@ def search():
         stats.searchTokens = [stats.ps.stem(token) for token in tokens]
 
     searchIndex()
-    return render_template("index.html", urls = stats.top_urls, search=query)
+    return render_template("index.html", urls = stats.top_urls, search=query, hits=stats.hits)
 
 
 
@@ -159,33 +160,30 @@ def create_partial_index(index):
         with open(f'index_{i + 1}.pkl', 'wb') as file:
             pickle.dump(splitData, file)
 
-def save_to_shelve(index):
-    """saves index to disk"""
-    with shelve.open("index_shelf") as shelf:
-        # Store the dictionary in the shelve
-        shelf['index'] = pickle.dumps(index)
+# def save_to_shelve(index):
+#     """saves index to disk"""
+#     with shelve.open("index_shelf") as shelf:
+#         # Store the dictionary in the shelve
+#         shelf['index'] = pickle.dumps(index)
 
 
 def searchIndex():
-    with shelve.open("index_shelf") as shelf:
-        # Retrieve and print the stored dictionary
-        stored_data = shelf.get('index', {})
-        unpickled_data = pickle.loads(stored_data)
-        matching_urls = None
-        for token in stats.searchTokens:
-            result = unpickled_data.get(token)
+    matching_urls = None
+    for token in stats.searchTokens:
+        result = stats.indexDict.get(token)
 
-            # Update matching_urls based on the current token
-            if result:
-                if matching_urls is None:
-                    matching_urls = set(result)
-                else:
-                    matching_urls.intersection_update(result)
+        # Update matching_urls based on the current token
+        if result:
+            if matching_urls is None:
+                matching_urls = set(result)
+            else:
+                matching_urls.intersection_update(result)
 
             # store top 5 urls tht contain all tokens
         if matching_urls:
             sorted_data = sorted(matching_urls, key=lambda x: x[1], reverse=True)
             stats.top_urls = sorted_data[:5]
+            stats.hits = len(sorted_data)
         else:
             stats.top_urls = ["No matching URLs found."]
 
@@ -196,8 +194,7 @@ if __name__ == "__main__":
         print("Indexing...")
         merge(3)
         print("Index Complete!")
-    zip_file_path = 'developer.zip'
+    # zip_file_path = 'developer.zip'
     # readZip(zip_file_path)
     # save_to_shelve(stats.indexDict)
     app.run(debug = True, port = 8000)
-
