@@ -1,16 +1,11 @@
 import zipfile
 import json
 import re
-import shelve
 import pickle
 
-from urllib.parse import urlparse
+
 from nltk.stem import PorterStemmer
 from bs4 import BeautifulSoup
-from dataclasses import dataclass,field
-from collections import Counter, defaultdict
-from typing import DefaultDict, List, Set
-from flask import Flask, render_template, request
 from InvertedIndex import valid
 from sklearn.feature_extraction.text import TfidfVectorizer
 import os
