@@ -15,6 +15,7 @@ from InvertedIndex import valid
 from sklearn.feature_extraction.text import TfidfVectorizer
 import os
 import pandas as pd
+from scipy.sparse import save_npz, load_npz
 
 def tfidfCalc(path):
     stemmer = PorterStemmer()
@@ -41,24 +42,40 @@ def tfidfCalc(path):
                     urls.append(json_data['url'])
                     content.append(corpus)
                     i+=1
-                    # print(i)
-                    # if i == 10:
+                    if i % 100 == 0:
+                        print(i)
+                    # if i == 2000:
                     #     break
 
-
+    print("CREATING VECTOR")
     vectorizer = TfidfVectorizer()
     matrix = vectorizer.fit_transform(content)
-    df = pd.DataFrame(matrix.toarray(), index = urls, columns = vectorizer.get_feature_names_out())
-    return df
+    save_npz("tfidf_matrix.npz", matrix)
+    try:
+        df = pd.DataFrame(matrix.toarray(), index = urls, columns = vectorizer.get_feature_names_out())
+
+        return df
+    except:
+        print("dataframe unavailable")
+
+        return matrix
 
 def offload(obj):
     with open("dataframe.pkl", 'wb') as file:
         pickle.dump(obj, file)
 
 def load(path="dataframe.pkl"):
+
     with open(path, 'rb') as file:
         return pickle.load(file)
 
 if __name__ == "__main__":
-    df = tfidfCalc("C:\\Users\\Antonio\\Downloads\\developer.zip")
-    offload(df)
+    # df = tfidfCalc("C:\\Users\\Antonio\\Downloads\\developer.zip")
+    # offload(df)
+    # print(load())
+    # print(os.path.getsize("dataframe.pkl"))
+    # print(os.path.getsize("tfidf_matrix.npz"))
+    loaded = load_npz("tfidf_matrix.npz")
+    # loaded2 = load()
+    # print(loaded2)
+    print(loaded)
