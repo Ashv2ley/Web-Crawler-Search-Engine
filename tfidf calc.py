@@ -41,7 +41,8 @@ def tfidfCalc(path):
                     urls.append(json_data['url'])
                     content.append(corpus)
                     i+=1
-                    # print(i)
+                    if i % 100 == 0:
+                        print(i)
                     # if i == 10:
                     #     break
 
@@ -60,5 +61,6 @@ def load(path="dataframe.pkl"):
         return pickle.load(file)
 
 if __name__ == "__main__":
-    df = tfidfCalc("C:\\Users\\Antonio\\Downloads\\developer.zip")
-    offload(df)
+    # df = tfidfCalc("C:\\Users\\Antonio\\Downloads\\developer.zip")
+    # offload(df)
+    print(load())
