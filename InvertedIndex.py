@@ -202,7 +202,7 @@ if __name__ == "__main__":
     if not stats.indexDict:
         print("Indexing...")
         merge(3)
-        mergeTifidf(3)
+        mergeTifidf(7)
         # Wait for both threads to finish
 
         print("Index Complete!")
