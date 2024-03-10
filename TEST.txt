@@ -1,0 +1,11 @@
+Queries:
+cs
+computer
+ics
+cristina lopes
+machine learning
+ACM
+master of software engineering
+
+Comments: the search query computer took very long to run so to make it perform better,
+we changed the way we accessed the text in each file by using libraries and list comprehensions.
