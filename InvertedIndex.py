@@ -3,6 +3,7 @@ import json
 import re
 import shelve
 import pickle
+import threading
 
 from urllib.parse import urlparse
 from nltk.stem import PorterStemmer
@@ -28,6 +29,7 @@ class indexStats():
     tf_idf: int = 0
     ps: PorterStemmer = PorterStemmer()
     indexDict: DefaultDict[str, List] = field(default_factory = lambda: defaultdict(list))
+    tf_idf_values: DefaultDict[str, List] = field(default_factory = lambda: defaultdict(list))
     uniqueTokens: Set[str] = field(default_factory = set)
     searchTokens: List[str] = field(default_factory = list)
     top_urls: List[str] = field(default_factory = list)
@@ -148,8 +150,14 @@ def merge(num:int):
             indexData = pickle.load(file)
             stats.indexDict.update(indexData)
 
+def mergeTifidf(num:int):
+    for i in range(num):
+        with open(f"index_w_tfidf_{i+1}.pkl", "rb") as file:
+            indexData = pickle.load(file)
+            stats.tf_idf_values.update(indexData)
 
-def create_partial_index(index):
+
+def create_partial_index():
     num_partitions = 3
     partSize = len(stats.indexDict) // num_partitions
     for i in range(num_partitions):
@@ -157,7 +165,7 @@ def create_partial_index(index):
         end = (i+1) * partSize
 
         splitData = {k: stats.indexDict[k] for k in list(stats.indexDict)[start:end]}
-        with open(f'index_{i + 1}.pkl', 'wb') as file:
+        with open(f'index_w_tfidf_{i + 1}.pkl', 'wb') as file:
             pickle.dump(splitData, file)
 
 # def save_to_shelve(index):
@@ -190,10 +198,15 @@ def searchIndex():
 
 if __name__ == "__main__":
     stats = indexStats()
+
     if not stats.indexDict:
         print("Indexing...")
         merge(3)
+        mergeTifidf(3)
+        # Wait for both threads to finish
+
         print("Index Complete!")
+    print(stats.tf_idf_values)
     # zip_file_path = 'developer.zip'
     # readZip(zip_file_path)
     # save_to_shelve(stats.indexDict)
