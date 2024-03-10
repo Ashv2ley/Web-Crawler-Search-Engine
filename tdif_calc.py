@@ -92,6 +92,7 @@ def readZip2(path: str):
 
                     stats.numDocs += 1
                     soup = BeautifulSoup(json_data['content'], "html.parser")
+
                     alphanumeric_words = re.findall(r'\b\w+\b', soup.get_text())
                     corpus = [stats.ps.stem(word.lower()) for word in
                               alphanumeric_words]  # all words in a file
@@ -108,12 +109,16 @@ def readZip2(path: str):
 
                     # Get each word and its TF-IDF score in the document
                     for word, tfidf_score in zip(feature_names, tfidf_matrix.toarray()[0]):
-                        stats.indexDict[word].append((json_data['url'], tfidf_score))
+                        # only increment if a heading or bold
+                        if word.lower() in [heading.text.lower() for heading in soup.find_all(['h1', 'h2', 'h3'])]:
+                            tfidf_score += 2
+
+                        if word.lower() in [word for bold_tag in soup.find_all('b') for word in re.findall(r'\b\w+\b', bold_tag.get_text())]:
+                            tfidf_score += 1.5
+
                     i+= 1
                     if i % 100 == 0:
                         print(i)
-                    # if i == 10:
-                    #     break
 def offload(obj):
     with open("vectorizer.pkl", 'wb') as file:
         pickle.dump(obj, file)
