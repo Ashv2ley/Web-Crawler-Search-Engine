@@ -80,6 +80,32 @@ def valid(url, content):
     return True
 
 
+
+# def writeReport():
+#     """class that writes data to a file"""
+#     with open('report.txt', 'w') as file:
+#         file.write("Number of documents: 0\n")
+#         file.write("Number of [unique] tokens: 0\n")
+#         file.write("Total size (in KB): 0\n")
+# 
+#     with open("report.txt", "r") as report:
+#         lines = report.readlines()
+# 
+#     # read from each line and update any values
+#     for i, line in enumerate(lines):
+# 
+#         if "Number of documents:" in line:
+#             lines[i] = f"Number of documents: {stats.numDocs}\n"
+#         elif "Number of [unique] tokens:" in line:
+#             lines[i] = f"Number of [unique] tokens: {len(stats.uniqueTokens)}\n"
+#         elif "Total size (in KB):" in line:
+#             lines[i] = f"Total size (in KB): {stats.totalSize}\n"
+# 
+# 
+#     with open("report.txt", "w") as report:
+#         report.writelines(lines)
+
+
 def index(path:str):
     """
     Takes in a path to a zip file, and reads its contents
@@ -200,20 +226,28 @@ def calculateTFIDF(path: str):
 
                     # Get each word and its TF-IDF score in the document
                     for word, tfidf_score in zip(feature_names, tfidf_matrix.toarray()[0]):
-                        stats.indexDict[word].append((json_data['url'], tfidf_score))
-                    #     if word.lower() in [heading.text.lower() for heading in soup.find_all(['h1', 'h2', 'h3'])]:
-                    #         tfidf_score += 2
-                    #
-                    #     if word.lower() in [word for bold_tag in soup.find_all('b') for word in re.findall(r'\b\w+\b', bold_tag.get_text())]:
-                    #         tfidf_score += 1.5
+                        # only increment if a heading or bold
+                        if word.lower() in [heading.text.lower() for heading in soup.find_all(['h1', 'h2', 'h3'])]:
+                            tfidf_score += 2
+
+                        if word.lower() in [word for bold_tag in soup.find_all('b') for word in re.findall(r'\b\w+\b', bold_tag.get_text())]:
+                            tfidf_score += 1.5
 
                     if i % 100 == 0:
                         print(i)
-                    # if i == 500:
-                    #     break
                     i += 1
 
 
+def create_partial_index():
+    num_partitions = 3
+    partSize = len(stats.indexDict) // num_partitions
+    for i in range(num_partitions):
+        start = i * partSize
+        end = (i+1) * partSize
+
+        splitData = {k: stats.indexDict[k] for k in list(stats.indexDict)[start:end]}
+        with open(f'index_w_tfidf_{i + 1}.pkl', 'wb') as file:
+            pickle.dump(splitData, file)
 def searchIndex():
     matching_urls = None
     for token in stats.searchTokens:
@@ -246,16 +280,17 @@ if __name__ == "__main__":
         stats = indexStats()
 
         if not stats.tf_idf_values:
-
             print("Indexing...")
-            try:
-                mergeTifidf(3)
-            except:
-                pass
+            with open("index_w_tfidf_1.pkl", 'rb') as file:
+                # content = pickle.load(file)
+                # print(content)
+            mergeTifidf(3)
+
             # Wait for both threads to finish
+
             print("Index Complete!")
 
     # zip_file_path = 'developer.zip'
     # index(zip_file_path)
     # save_to_shelve(stats.indexDict)
-        app.run(debug=True, port = 8000)
+        app.run(debug = True, port = 8000)
