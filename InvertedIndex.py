@@ -1,10 +1,12 @@
+import sys
 import zipfile
 import json
 import re
 import shelve
 import pickle
 import threading
-
+import time
+from sklearn.feature_extraction.text import TfidfVectorizer
 from urllib.parse import urlparse
 from nltk.stem import PorterStemmer
 from bs4 import BeautifulSoup
@@ -104,7 +106,7 @@ def valid(url, content):
 #         report.writelines(lines)
 
 
-def readZip(path:str):
+def index(path:str):
     """
     Takes in a path to a zip file, and reads its contents
     :param path:
@@ -174,7 +176,78 @@ def create_partial_index():
 #         # Store the dictionary in the shelve
 #         shelf['index'] = pickle.dumps(index)
 
+def calculateTFIDF(path: str):
+    """
+    Takes in a path to a zip file, and reads its contents
+    :param path:
+        path to the zip file
+    :return: None
+    """
 
+    # Initialize TfidfVectorizer
+    vectorizer = TfidfVectorizer()
+
+    # Open the zip file
+    with zipfile.ZipFile(path, 'r') as zip_ref:
+        # List all files in the zip archive
+        file_list = zip_ref.namelist()
+
+        # Iterate through each file in the zip archive
+        i = 0
+        for file_name in file_list:
+            stats.numDocs += 1
+
+            # Check if the file is a JSON file (you can customize this condition)
+            if file_name.endswith('.json'):
+                # Read the JSON content directly from the zip archive
+                with zip_ref.open(file_name) as json_file:
+                    # Load JSON content
+                    json_data = json.load(json_file)
+
+                    if not valid(json_data['url'], json_data['content']):
+                        pass
+
+                    stats.numDocs += 1
+                    soup = BeautifulSoup(json_data['content'], "html.parser")
+
+                    alphanumeric_words = re.findall(r'\b\w+\b', soup.get_text())
+                    corpus = [stats.ps.stem(word.lower()) for word in
+                              alphanumeric_words]  # all words in a file
+
+                    # Convert the list of words into a string for TfidfVectorizer
+                    document_text = ' '.join(corpus)
+
+                    # Vectorize the document using TF-IDF
+                    try:
+                        tfidf_matrix = vectorizer.fit_transform([document_text])
+                    except ValueError:
+                        pass
+                    feature_names = vectorizer.get_feature_names_out()
+
+                    # Get each word and its TF-IDF score in the document
+                    for word, tfidf_score in zip(feature_names, tfidf_matrix.toarray()[0]):
+                        # only increment if a heading or bold
+                        if word.lower() in [heading.text.lower() for heading in soup.find_all(['h1', 'h2', 'h3'])]:
+                            tfidf_score += 2
+
+                        if word.lower() in [word for bold_tag in soup.find_all('b') for word in re.findall(r'\b\w+\b', bold_tag.get_text())]:
+                            tfidf_score += 1.5
+
+                    if i % 100 == 0:
+                        print(i)
+                    i += 1
+
+
+def create_partial_index():
+    num_partitions = 3
+    partSize = len(stats.indexDict) // num_partitions
+    for i in range(num_partitions):
+        start = i * partSize
+        end = (i+1) * partSize
+
+        splitData = {k: stats.indexDict[k] for k in list(stats.indexDict)[start:end]}
+        with open(f'index_w_tfidf_{i + 1}.pkl', 'wb') as file:
+            pickle.dump(splitData, file)
 def searchIndex():
     matching_urls = None
     for token in stats.searchTokens:
@@ -197,17 +270,28 @@ def searchIndex():
 
 
 if __name__ == "__main__":
-    stats = indexStats()
+    command = input('Type "index" to create index or type "run" to run application:\n')
+    if command == "index":
+        path = input("Enter the path to zip file:\n").strip('"')
+        calculateTFIDF(path)
+        create_partial_index()
+    if command == "run":
 
-    if not stats.indexDict:
-        print("Indexing...")
-        merge(3)
-        mergeTifidf(7)
-        # Wait for both threads to finish
+        stats = indexStats()
 
-        print("Index Complete!")
-    print(stats.tf_idf_values)
+        if not stats.tf_idf_values:
+            print("Indexing...")
+            with open("index_w_tfidf_1.pkl", 'rb') as file:
+                content = pickle.load(file)
+                print(content)
+            mergeTifidf(3)
+
+            # Wait for both threads to finish
+
+            print("Index Complete!")
+        print(stats.tf_idf_values)
+
     # zip_file_path = 'developer.zip'
-    # readZip(zip_file_path)
+    # index(zip_file_path)
     # save_to_shelve(stats.indexDict)
-    app.run(debug = True, port = 8000)
+        app.run(debug = True, port = 8000)
