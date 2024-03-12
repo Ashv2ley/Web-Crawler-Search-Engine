@@ -236,6 +236,8 @@ def calculateTFIDF(path: str):
 
                     if i % 100 == 0:
                         print(i)
+                    if i == 500:
+                        break
                     i += 1
 
 
