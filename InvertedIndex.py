@@ -251,7 +251,7 @@ def create_partial_index():
 def searchIndex():
     matching_urls = None
     for token in stats.searchTokens:
-        result = stats.indexDict.get(token)
+        result = stats.tf_idf_values.get(token)
 
         # Update matching_urls based on the current token
         if result:
@@ -282,8 +282,8 @@ if __name__ == "__main__":
         if not stats.tf_idf_values:
             print("Indexing...")
             with open("index_w_tfidf_1.pkl", 'rb') as file:
-                # content = pickle.load(file)
-                # print(content)
+                    # content = pickle.load(file)
+                #print(content)
             mergeTifidf(3)
 
             # Wait for both threads to finish
