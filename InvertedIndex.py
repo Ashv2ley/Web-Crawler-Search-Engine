@@ -80,33 +80,6 @@ def valid(url, content):
         return False
     return True
 
-
-
-# def writeReport():
-#     """class that writes data to a file"""
-#     with open('report.txt', 'w') as file:
-#         file.write("Number of documents: 0\n")
-#         file.write("Number of [unique] tokens: 0\n")
-#         file.write("Total size (in KB): 0\n")
-# 
-#     with open("report.txt", "r") as report:
-#         lines = report.readlines()
-# 
-#     # read from each line and update any values
-#     for i, line in enumerate(lines):
-# 
-#         if "Number of documents:" in line:
-#             lines[i] = f"Number of documents: {stats.numDocs}\n"
-#         elif "Number of [unique] tokens:" in line:
-#             lines[i] = f"Number of [unique] tokens: {len(stats.uniqueTokens)}\n"
-#         elif "Total size (in KB):" in line:
-#             lines[i] = f"Total size (in KB): {stats.totalSize}\n"
-# 
-# 
-#     with open("report.txt", "w") as report:
-#         report.writelines(lines)
-
-
 def index(path:str):
     """
     Takes in a path to a zip file, and reads its contents
@@ -172,11 +145,6 @@ def create_partial_index():
         with open(f'index_w_tfidf_{i + 1}.pkl', 'wb') as file:
             pickle.dump(splitData, file)
 
-# def save_to_shelve(index):
-#     """saves index to disk"""
-#     with shelve.open("index_shelf") as shelf:
-#         # Store the dictionary in the shelve
-#         shelf['index'] = pickle.dumps(index)
 
 def calculateTFIDF(path: str):
     """
@@ -289,8 +257,4 @@ if __name__ == "__main__":
             # Wait for both threads to finish
 
             print("Index Complete!")
-
-    # zip_file_path = 'developer.zip'
-    # index(zip_file_path)
-    # save_to_shelve(stats.indexDict)
-        app.run(debug = True, port = 8000)
+        app.run(port = 8000)
