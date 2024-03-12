@@ -226,12 +226,13 @@ def calculateTFIDF(path: str):
 
                     # Get each word and its TF-IDF score in the document
                     for word, tfidf_score in zip(feature_names, tfidf_matrix.toarray()[0]):
+                        stats.indexDict[word].append((json_data['url'], tfidf_score))
                         # only increment if a heading or bold
-                        if word.lower() in [heading.text.lower() for heading in soup.find_all(['h1', 'h2', 'h3'])]:
-                            tfidf_score += 2
-
-                        if word.lower() in [word for bold_tag in soup.find_all('b') for word in re.findall(r'\b\w+\b', bold_tag.get_text())]:
-                            tfidf_score += 1.5
+                        # if word.lower() in [heading.text.lower() for heading in soup.find_all(['h1', 'h2', 'h3'])]:
+                        #     tfidf_score += 2
+                        #
+                        # if word.lower() in [word for bold_tag in soup.find_all('b') for word in re.findall(r'\b\w+\b', bold_tag.get_text())]:
+                        #     tfidf_score += 1.5
 
                     if i % 100 == 0:
                         print(i)
@@ -281,9 +282,7 @@ if __name__ == "__main__":
 
         if not stats.tf_idf_values:
             print("Indexing...")
-            with open("index_w_tfidf_1.pkl", 'rb') as file:
-                # content = pickle.load(file)
-                # print(content)
+
             mergeTifidf(3)
 
             # Wait for both threads to finish
