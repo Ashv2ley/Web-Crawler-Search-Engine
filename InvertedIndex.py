@@ -1,11 +1,7 @@
-import sys
 import zipfile
 import json
 import re
-import shelve
 import pickle
-import threading
-import time
 from sklearn.feature_extraction.text import TfidfVectorizer
 from urllib.parse import urlparse
 from nltk.stem import PorterStemmer
@@ -14,7 +10,6 @@ from dataclasses import dataclass,field
 from collections import Counter, defaultdict
 from typing import DefaultDict, List, Set
 from flask import Flask, render_template, request
-import os.path
 
 @dataclass
 class indexStats():
@@ -36,6 +31,7 @@ class indexStats():
     searchTokens: List[str] = field(default_factory = list)
     top_urls: List[str] = field(default_factory = list)
     import_words: List[str] = field(default_factory = list)
+    similarity_matrix: list[list[float]] = None
 
 
 app = Flask(__name__, static_url_path='/static')
@@ -79,32 +75,6 @@ def valid(url, content):
     if "html" not in soup.contents[0]:
         return False
     return True
-
-
-
-# def writeReport():
-#     """class that writes data to a file"""
-#     with open('report.txt', 'w') as file:
-#         file.write("Number of documents: 0\n")
-#         file.write("Number of [unique] tokens: 0\n")
-#         file.write("Total size (in KB): 0\n")
-# 
-#     with open("report.txt", "r") as report:
-#         lines = report.readlines()
-# 
-#     # read from each line and update any values
-#     for i, line in enumerate(lines):
-# 
-#         if "Number of documents:" in line:
-#             lines[i] = f"Number of documents: {stats.numDocs}\n"
-#         elif "Number of [unique] tokens:" in line:
-#             lines[i] = f"Number of [unique] tokens: {len(stats.uniqueTokens)}\n"
-#         elif "Total size (in KB):" in line:
-#             lines[i] = f"Total size (in KB): {stats.totalSize}\n"
-# 
-# 
-#     with open("report.txt", "w") as report:
-#         report.writelines(lines)
 
 
 def index(path:str):
@@ -172,12 +142,6 @@ def create_partial_index():
         with open(f'index_w_tfidf_{i + 1}.pkl', 'wb') as file:
             pickle.dump(splitData, file)
 
-# def save_to_shelve(index):
-#     """saves index to disk"""
-#     with shelve.open("index_shelf") as shelf:
-#         # Store the dictionary in the shelve
-#         shelf['index'] = pickle.dumps(index)
-
 def calculateTFIDF(path: str):
     """
     Takes in a path to a zip file, and reads its contents
@@ -199,7 +163,7 @@ def calculateTFIDF(path: str):
         for file_name in file_list:
             stats.numDocs += 1
 
-            # Check if the file is a JSON file (you can customize this condition)
+            # Check if the file is a JSON file
             if file_name.endswith('.json'):
                 # Read the JSON content directly from the zip archive
                 with zip_ref.open(file_name) as json_file:
@@ -211,6 +175,7 @@ def calculateTFIDF(path: str):
 
                     stats.numDocs += 1
                     soup = BeautifulSoup(json_data['content'], "html.parser")
+                    #find all important words
                     if len(stats.import_words) == 0:
                         stats.import_words = [heading.text.lower() for heading in soup.find_all(['h1', 'h2', 'h3'])] + [word for bold_tag in soup.find_all('b') for word in re.findall(r'\b\w+\b', bold_tag.get_text())]
 
@@ -231,7 +196,7 @@ def calculateTFIDF(path: str):
                     # Get each word and its TF-IDF score in the document
                     for word, tfidf_score in zip(feature_names, tfidf_matrix.toarray()[0]):
                         stats.indexDict[word].append((json_data['url'], tfidf_score))
-                        if word.lower in stats.import_words:
+                        if word.lower in stats.import_words: #check if word is important word
                             stats.indexDict.get(word.lower)[1] += 2
 
                     if i % 100 == 0:
@@ -249,6 +214,7 @@ def create_partial_index():
         splitData = {k: stats.indexDict[k] for k in list(stats.indexDict)[start:end]}
         with open(f'index_w_tfidf_{i + 1}.pkl', 'wb') as file:
             pickle.dump(splitData, file)
+
 def searchIndex():
     matching_urls = None
     for token in stats.searchTokens:
@@ -263,7 +229,9 @@ def searchIndex():
 
             # store top 5 urls tht contain all tokens
         if matching_urls:
+
             sorted_data = sorted(matching_urls, key=lambda x: x[1], reverse=True)
+
             stats.top_urls = sorted_data[:5]
             stats.hits = len(sorted_data)
         else:
@@ -271,13 +239,13 @@ def searchIndex():
 
 
 if __name__ == "__main__":
-    command = input('Type "index" to create index or type "run" to run application:\n')
+
+    command = input('Type "index" to create index or type "run" to run application: ')
     if command == "index":
-        path = input("Enter the path to zip file:\n").strip('"')
+        path = input("Enter the path to zip file: ").strip('"')
         calculateTFIDF(path)
         create_partial_index()
     if command == "run":
-
         stats = indexStats()
 
         if not stats.tf_idf_values:
@@ -289,7 +257,4 @@ if __name__ == "__main__":
 
             print("Index Complete!")
 
-    # zip_file_path = 'developer.zip'
-    # index(zip_file_path)
-    # save_to_shelve(stats.indexDict)
-        app.run(debug = True, port = 8000)
+    app.run(port = 8000)
