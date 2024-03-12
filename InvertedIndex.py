@@ -199,8 +199,8 @@ def calculateTFIDF(path: str):
                     feature_names = vectorizer.get_feature_names_out()
 
                     # Get each word and its TF-IDF score in the document
-                    # for word, tfidf_score in zip(feature_names, tfidf_matrix.toarray()[0]):
-                    #     # only increment if a heading or bold
+                    for word, tfidf_score in zip(feature_names, tfidf_matrix.toarray()[0]):
+                        stats.indexDict[word].append((json_data['url'], tfidf_score))
                     #     if word.lower() in [heading.text.lower() for heading in soup.find_all(['h1', 'h2', 'h3'])]:
                     #         tfidf_score += 2
                     #
@@ -209,8 +209,8 @@ def calculateTFIDF(path: str):
 
                     if i % 100 == 0:
                         print(i)
-                    if i == 500:
-                        break
+                    # if i == 500:
+                    #     break
                     i += 1
 
 
