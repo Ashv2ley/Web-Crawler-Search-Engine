@@ -1,4 +1,4 @@
-# IR24W-A3-G1
+IR24W-A3-G1
 -------------------------
 Assignment 3: Implementing a Search Engine
 
@@ -18,5 +18,6 @@ TEAM MEMBERS
 HOW TO USE
 -------------------------
 1. To begin running, first install all dependencies indicated in the requirements.txt file.
-2. Next, run the tdif_calc file to create the index
-3. Next, run the InvertedIndex file to run the web gui and search the index
+2. Next, run InvertedIndex.py
+3. To create the index, type, "index" in the terminal
+4. To open the search engine, type, "run"
