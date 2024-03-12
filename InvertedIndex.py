@@ -35,6 +35,7 @@ class indexStats():
     uniqueTokens: Set[str] = field(default_factory = set)
     searchTokens: List[str] = field(default_factory = list)
     top_urls: List[str] = field(default_factory = list)
+    import_words: List[str] = field(default_factory = list)
 
 
 app = Flask(__name__, static_url_path='/static')
@@ -132,6 +133,7 @@ def index(path:str):
                     stats.numDocs += 1
                     soup = BeautifulSoup(json_data['content'], "html.parser")
                     alphanumeric_words = re.findall(r'\b\w+\b', soup.get_text())
+
                     corpus = [stats.ps.stem(word.lower()) for word in alphanumeric_words] #all words in a file
                     num_of_words_in_file = len(corpus)
                     counter = Counter(corpus)
@@ -209,6 +211,8 @@ def calculateTFIDF(path: str):
 
                     stats.numDocs += 1
                     soup = BeautifulSoup(json_data['content'], "html.parser")
+                    if len(stats) == 0:
+                        stats.import_words = [heading.text.lower() for heading in soup.find_all(['h1', 'h2', 'h3'])] + [word for bold_tag in soup.find_all('b') for word in re.findall(r'\b\w+\b', bold_tag.get_text())]
 
                     alphanumeric_words = re.findall(r'\b\w+\b', soup.get_text())
                     corpus = [stats.ps.stem(word.lower()) for word in
@@ -227,6 +231,8 @@ def calculateTFIDF(path: str):
                     # Get each word and its TF-IDF score in the document
                     for word, tfidf_score in zip(feature_names, tfidf_matrix.toarray()[0]):
                         stats.indexDict[word].append((json_data['url'], tfidf_score))
+                        if word.lower in stats.import_words:
+                            stats.indexDict.get(word.lower)[1] += 2
                         # only increment if a heading or bold
                         # if word.lower() in [heading.text.lower() for heading in soup.find_all(['h1', 'h2', 'h3'])]:
                         #     tfidf_score += 2
