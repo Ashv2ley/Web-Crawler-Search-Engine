@@ -233,12 +233,6 @@ def calculateTFIDF(path: str):
                         stats.indexDict[word].append((json_data['url'], tfidf_score))
                         if word.lower in stats.import_words:
                             stats.indexDict.get(word.lower)[1] += 2
-                        # only increment if a heading or bold
-                        # if word.lower() in [heading.text.lower() for heading in soup.find_all(['h1', 'h2', 'h3'])]:
-                        #     tfidf_score += 2
-                        #
-                        # if word.lower() in [word for bold_tag in soup.find_all('b') for word in re.findall(r'\b\w+\b', bold_tag.get_text())]:
-                        #     tfidf_score += 1.5
 
                     if i % 100 == 0:
                         print(i)
