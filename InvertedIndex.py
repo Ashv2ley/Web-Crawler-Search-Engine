@@ -257,4 +257,3 @@ if __name__ == "__main__":
             print("Index Complete!")
         app.run(port = 8000)
 
-    app.run(port = 8000)
