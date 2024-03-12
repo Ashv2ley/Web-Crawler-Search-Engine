@@ -211,7 +211,7 @@ def calculateTFIDF(path: str):
 
                     stats.numDocs += 1
                     soup = BeautifulSoup(json_data['content'], "html.parser")
-                    if len(stats) == 0:
+                    if len(stats.import_words) == 0:
                         stats.import_words = [heading.text.lower() for heading in soup.find_all(['h1', 'h2', 'h3'])] + [word for bold_tag in soup.find_all('b') for word in re.findall(r'\b\w+\b', bold_tag.get_text())]
 
                     alphanumeric_words = re.findall(r'\b\w+\b', soup.get_text())
@@ -233,12 +233,6 @@ def calculateTFIDF(path: str):
                         stats.indexDict[word].append((json_data['url'], tfidf_score))
                         if word.lower in stats.import_words:
                             stats.indexDict.get(word.lower)[1] += 2
-                        # only increment if a heading or bold
-                        # if word.lower() in [heading.text.lower() for heading in soup.find_all(['h1', 'h2', 'h3'])]:
-                        #     tfidf_score += 2
-                        #
-                        # if word.lower() in [word for bold_tag in soup.find_all('b') for word in re.findall(r'\b\w+\b', bold_tag.get_text())]:
-                        #     tfidf_score += 1.5
 
                     if i % 100 == 0:
                         print(i)
@@ -258,7 +252,7 @@ def create_partial_index():
 def searchIndex():
     matching_urls = None
     for token in stats.searchTokens:
-        result = stats.indexDict.get(token)
+        result = stats.tf_idf_values.get(token)
 
         # Update matching_urls based on the current token
         if result:
