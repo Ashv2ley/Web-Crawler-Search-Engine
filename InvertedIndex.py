@@ -282,14 +282,13 @@ if __name__ == "__main__":
         if not stats.tf_idf_values:
             print("Indexing...")
             with open("index_w_tfidf_1.pkl", 'rb') as file:
-                content = pickle.load(file)
-                print(content)
+                # content = pickle.load(file)
+                # print(content)
             mergeTifidf(3)
 
             # Wait for both threads to finish
 
             print("Index Complete!")
-        print(stats.tf_idf_values)
 
     # zip_file_path = 'developer.zip'
     # index(zip_file_path)
